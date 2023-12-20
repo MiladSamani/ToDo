@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type User struct {
@@ -15,18 +16,23 @@ type User struct {
 }
 
 type Task struct {
-	ID       int
-	title    string
-	dueDate  string
-	category string
-	isDone   bool
-	userID   int
+	ID         int
+	title      string
+	dueDate    string
+	categoryID int
+	isDone     bool
+	userID     int
 }
 
-// User storage layer
-var userStorage []User
+type Category struct {
+	ID     int
+	title  string
+	color  string
+	userID int
+}
 
-// Task storage layer
+var categoryStorage []Category
+var userStorage []User
 var taskStorage []Task
 
 var authenticatedUser *User
@@ -84,21 +90,36 @@ func createTask() {
 	scanner.Scan()
 	title = scanner.Text()
 
-	fmt.Println("please enter the task Category")
+	fmt.Println("please enter the task Category ID")
 	scanner.Scan()
 	category = scanner.Text()
-
+	categoryID, err := strconv.Atoi(category)
+	if err != nil {
+		fmt.Printf("Category Id is not valid integer %v\n", err)
+		return
+	}
+	isFound := false
+	for _, c := range categoryStorage {
+		if c.ID == categoryID && categoryID == c.userID {
+			isFound = true
+			break
+		}
+	}
+	if !isFound {
+		fmt.Printf("Category Id is not Found %v\n")
+		return
+	}
 	fmt.Println("please enter the task Due Date")
 	scanner.Scan()
 	dueDate = scanner.Text()
 
 	task := Task{
-		ID:       len(taskStorage) + 1,
-		title:    title,
-		dueDate:  dueDate,
-		category: category,
-		isDone:   false,
-		userID:   authenticatedUser.ID,
+		ID:         len(taskStorage) + 1,
+		title:      title,
+		dueDate:    dueDate,
+		categoryID: categoryID,
+		isDone:     false,
+		userID:     authenticatedUser.ID,
 	}
 	taskStorage = append(taskStorage, task)
 }
@@ -116,8 +137,8 @@ func createCategory() {
 	scanner.Scan()
 	color = scanner.Text()
 
-	//show
-	fmt.Println("category : ", title, color)
+	c := Category{ID: len(categoryStorage) + 1, title: title, color: color, userID: authenticatedUser.ID}
+	categoryStorage = append(categoryStorage, c)
 }
 
 func userRegister() {
@@ -172,10 +193,6 @@ func login() {
 	if authenticatedUser == nil {
 		fmt.Println("the email or password is not correct")
 	}
-}
-
-func (u User) print() {
-	fmt.Println("User :", u.ID, u.Email, u.Name)
 }
 
 func listTask() {
